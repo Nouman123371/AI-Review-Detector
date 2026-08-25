@@ -34,7 +34,9 @@ st.set_page_config(
 # =========================================================
 # Load model artifacts (cached so it only loads once)
 # =========================================================
-ARTIFACTS_DIR = "artifacts"
+import os
+
+ARTIFACTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "artifacts")
 
 @st.cache_resource
 def load_artifacts():
