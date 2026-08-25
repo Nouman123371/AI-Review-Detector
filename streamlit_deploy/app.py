@@ -354,7 +354,7 @@ render_html(
        SELECT BOX
        ========================= */
 
-    div[data-baseweb="select"] > div {
+    [data-testid="stSelectbox"] div[data-baseweb="select"] > div {
         background-color:
             #0f172a !important;
 
@@ -366,7 +366,56 @@ render_html(
             12px !important;
 
         color:
-            white !important;
+            #f8fafc !important;
+    }
+
+    [data-testid="stSelectbox"] div[data-baseweb="select"] input {
+        color:
+            #f8fafc !important;
+    }
+
+    [data-testid="stSelectbox"] div[data-baseweb="select"] svg {
+        fill:
+            #94a3b8 !important;
+    }
+
+    /* Dropdown menu that opens when the select box is clicked */
+    div[data-baseweb="popover"] ul[role="listbox"] {
+        background-color:
+            #0f172a !important;
+
+        border:
+            1px solid
+            #334155 !important;
+    }
+
+    div[data-baseweb="popover"] ul[role="listbox"] li {
+        background-color:
+            #0f172a !important;
+
+        color:
+            #f8fafc !important;
+    }
+
+    div[data-baseweb="popover"] ul[role="listbox"] li:hover {
+        background-color:
+            #1e293b !important;
+    }
+
+
+    /* =========================
+       WIDGET LABELS
+       ========================= */
+
+    [data-testid="stWidgetLabel"] p {
+        color:
+            #e2e8f0 !important;
+
+        font-size:
+            14px !important;
+
+        font-weight:
+            600 !important;
     }
 
 
