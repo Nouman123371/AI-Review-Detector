@@ -12,7 +12,7 @@ Required artifacts:
         style_scaler.joblib
         linear_svm.joblib
         logistic_regression.joblib
-        xgboost.json
+        xgboost.joblib
 """
 
 import os
@@ -21,7 +21,6 @@ import pandas as pd
 import joblib
 import streamlit as st
 from scipy.sparse import hstack
-from xgboost import XGBClassifier
 
 
 # =========================================================
@@ -295,12 +294,13 @@ def load_artifacts():
         )
     )
 
-    # XGBoost native JSON model
-    xgb_model = XGBClassifier()
-    xgb_model.load_model(
+    # XGBoost model was saved with joblib.dump() during training,
+    # so it must be loaded with joblib.load() too — not XGBClassifier().load_model(),
+    # which expects a native .json/.ubj file that was never created.
+    xgb_model = joblib.load(
         os.path.join(
             ARTIFACTS_DIR,
-            "xgboost.json"
+            "xgboost.joblib"
         )
     )
 
