@@ -25,6 +25,15 @@ import streamlit as st
 from scipy.sparse import hstack
 
 
+def render_html(content: str):
+    """Render an HTML block via st.markdown. Strips leading whitespace from
+    every line individually (not just common dedent) so that nested/indented
+    HTML tags never get mistaken for a Markdown code block."""
+    lines = content.strip("\n").split("\n")
+    flattened = "\n".join(line.strip() for line in lines)
+    st.markdown(flattened, unsafe_allow_html=True)
+
+
 # =========================================================
 # PAGE CONFIG
 # =========================================================
@@ -41,7 +50,7 @@ st.set_page_config(
 # CUSTOM CSS
 # =========================================================
 
-st.markdown(
+render_html(
     """
     <style>
 
@@ -668,8 +677,7 @@ st.markdown(
     }
 
     </style>
-    """,
-    unsafe_allow_html=True,
+    """
 )
 
 
@@ -887,7 +895,7 @@ if "show_about" not in st.session_state:
 
 with st.sidebar:
 
-    st.markdown(
+    render_html(
         """
         <div style="
             text-align:center;
@@ -912,8 +920,7 @@ with st.sidebar:
             </span>
 
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
 
     st.markdown(
@@ -1008,7 +1015,7 @@ with st.sidebar:
 # HERO SECTION
 # =========================================================
 
-st.markdown(
+render_html(
     """
     <div class="hero">
 
@@ -1053,8 +1060,7 @@ st.markdown(
         </div>
 
     </div>
-    """,
-    unsafe_allow_html=True,
+    """
 )
 
 
@@ -1067,7 +1073,7 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
 
-    st.markdown(
+    render_html(
         """
         <div class="feature-card">
 
@@ -1085,14 +1091,13 @@ with col1:
             </div>
 
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
 
 
 with col2:
 
-    st.markdown(
+    render_html(
         """
         <div class="feature-card">
 
@@ -1110,14 +1115,13 @@ with col2:
             </div>
 
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
 
 
 with col3:
 
-    st.markdown(
+    render_html(
         """
         <div class="feature-card">
 
@@ -1135,8 +1139,7 @@ with col3:
             </div>
 
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
 
 
@@ -1144,7 +1147,7 @@ with col3:
 # ANALYSIS SECTION
 # =========================================================
 
-st.markdown(
+render_html(
     """
     <div class="section-title">
         🔍 Analyze a Review
@@ -1154,8 +1157,7 @@ st.markdown(
         Enter a product review and select the machine
         learning model you want to use.
     </div>
-    """,
-    unsafe_allow_html=True,
+    """
 )
 
 
@@ -1193,15 +1195,14 @@ with info_col:
             "🚀 Gradient boosting model capable of learning complex patterns.",
     }
 
-    st.markdown(
+    render_html(
         f"""
         <div class="info-box" style="
             margin-top:28px;
         ">
             {descriptions[model_choice]}
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
 
 
@@ -1256,9 +1257,8 @@ else:
     length_status = "GOOD"
 
 
-st.markdown(
-    "<div style='height:8px'></div>",
-    unsafe_allow_html=True,
+render_html(
+    "<div style='height:8px'></div>"
 )
 
 
@@ -1267,7 +1267,7 @@ stat1, stat2, stat3, stat4 = st.columns(4)
 
 with stat1:
 
-    st.markdown(
+    render_html(
         f"""
         <div class="stat-card">
 
@@ -1280,14 +1280,13 @@ with stat1:
             </div>
 
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
 
 
 with stat2:
 
-    st.markdown(
+    render_html(
         f"""
         <div class="stat-card">
 
@@ -1300,14 +1299,13 @@ with stat2:
             </div>
 
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
 
 
 with stat3:
 
-    st.markdown(
+    render_html(
         f"""
         <div class="stat-card">
 
@@ -1320,14 +1318,13 @@ with stat3:
             </div>
 
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
 
 
 with stat4:
 
-    st.markdown(
+    render_html(
         f"""
         <div class="stat-card">
 
@@ -1340,8 +1337,7 @@ with stat4:
             </div>
 
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
 
 
@@ -1349,9 +1345,8 @@ with stat4:
 # ACTION BUTTONS
 # =========================================================
 
-st.markdown(
-    "<div style='height:18px'></div>",
-    unsafe_allow_html=True,
+render_html(
+    "<div style='height:18px'></div>"
 )
 
 
@@ -1403,7 +1398,7 @@ with button3:
 
 if st.session_state.show_about:
 
-    st.markdown(
+    render_html(
         """
         <div class="card">
 
@@ -1432,8 +1427,7 @@ if st.session_state.show_about:
             </p>
 
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
 
 
@@ -1500,7 +1494,7 @@ if st.session_state.result is not None:
 
     st.divider()
 
-    st.markdown(
+    render_html(
         """
         <div class="section-title">
             📊 Analysis Result
@@ -1510,8 +1504,7 @@ if st.session_state.result is not None:
             Classification generated by your trained
             machine learning model.
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
 
 
@@ -1521,7 +1514,7 @@ if st.session_state.result is not None:
 
     if is_ai:
 
-        st.markdown(
+        render_html(
             """
             <div class="ai-result">
 
@@ -1539,13 +1532,12 @@ if st.session_state.result is not None:
                 </div>
 
             </div>
-            """,
-            unsafe_allow_html=True,
+            """
         )
 
     else:
 
-        st.markdown(
+        render_html(
             """
             <div class="human-result">
 
@@ -1563,8 +1555,7 @@ if st.session_state.result is not None:
                 </div>
 
             </div>
-            """,
-            unsafe_allow_html=True,
+            """
         )
 
 
@@ -1572,7 +1563,7 @@ if st.session_state.result is not None:
     # CONFIDENCE
     # =====================================================
 
-    st.markdown(
+    render_html(
         f"""
         <div class="confidence-box">
 
@@ -1591,8 +1582,7 @@ if st.session_state.result is not None:
             </div>
 
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
 
 
@@ -1681,13 +1671,12 @@ if st.session_state.result is not None:
         )
 
 
-    st.markdown(
+    render_html(
         f"""
         <div class="info-box">
             {interpretation}
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
 
 
@@ -1734,7 +1723,7 @@ if st.session_state.result is not None:
 # DISCLAIMER
 # =========================================================
 
-st.markdown(
+render_html(
     """
     <div class="card" style="
         margin-top:35px;
@@ -1761,8 +1750,7 @@ st.markdown(
         </div>
 
     </div>
-    """,
-    unsafe_allow_html=True,
+    """
 )
 
 
@@ -1770,7 +1758,7 @@ st.markdown(
 # FOOTER
 # =========================================================
 
-st.markdown(
+render_html(
     """
     <div class="footer">
 
@@ -1785,6 +1773,5 @@ st.markdown(
         FYP / Academic Portfolio Project
 
     </div>
-    """,
-    unsafe_allow_html=True,
+    """
 )
