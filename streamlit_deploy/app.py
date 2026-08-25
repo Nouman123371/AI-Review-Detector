@@ -1,11 +1,13 @@
+```python
 """
-app.py — AI-Generated Review Detector
-Professional Streamlit Frontend
+app.py — Professional AI-Generated Review Detector
 
 Run:
     streamlit run app.py
 
-Required artifacts:
+Folder structure:
+    app.py
+    requirements.txt
     artifacts/
         word_vectorizer.joblib
         char_vectorizer.joblib
@@ -15,11 +17,11 @@ Required artifacts:
         xgboost.joblib
 """
 
-import os
-import numpy as np
-import pandas as pd
-import joblib
 import streamlit as st
+import joblib
+import pandas as pd
+import numpy as np
+import os
 from scipy.sparse import hstack
 
 
@@ -31,7 +33,7 @@ st.set_page_config(
     page_title="AI Review Detector",
     page_icon="🕵️",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="expanded"
 )
 
 
@@ -39,211 +41,450 @@ st.set_page_config(
 # CUSTOM CSS
 # =========================================================
 
-st.markdown(
-    """
-    <style>
+st.markdown("""
+<style>
 
-    /* ---------- Global ---------- */
+/* ---------- GLOBAL ---------- */
 
-    .stApp {
-        background:
-            radial-gradient(circle at 10% 10%, rgba(99,102,241,0.12), transparent 30%),
-            radial-gradient(circle at 90% 20%, rgba(139,92,246,0.10), transparent 30%),
-            #0b1020;
-        color: #f8fafc;
-    }
+.stApp {
+    background:
+        radial-gradient(circle at 10% 10%, rgba(59,130,246,0.10), transparent 30%),
+        radial-gradient(circle at 90% 20%, rgba(139,92,246,0.10), transparent 30%),
+        #0b1120;
+    color: #f8fafc;
+}
 
-    .block-container {
-        max-width: 1200px;
-        padding-top: 2rem;
-        padding-bottom: 3rem;
-    }
+.block-container {
+    max-width: 1200px;
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+}
 
-    /* ---------- Header ---------- */
 
-    .hero {
-        padding: 30px;
-        border-radius: 24px;
-        background: linear-gradient(
+/* ---------- SIDEBAR ---------- */
+
+section[data-testid="stSidebar"] {
+    background:
+        linear-gradient(180deg, #111827 0%, #0f172a 100%);
+    border-right: 1px solid rgba(148,163,184,0.15);
+}
+
+section[data-testid="stSidebar"] h1,
+section[data-testid="stSidebar"] h2,
+section[data-testid="stSidebar"] h3 {
+    color: #f8fafc;
+}
+
+section[data-testid="stSidebar"] p {
+    color: #94a3b8;
+}
+
+
+/* ---------- HERO ---------- */
+
+.hero {
+    background:
+        linear-gradient(
             135deg,
-            rgba(30,41,59,0.95),
-            rgba(15,23,42,0.95)
+            rgba(37,99,235,0.95),
+            rgba(124,58,237,0.95)
         );
-        border: 1px solid rgba(148,163,184,0.15);
-        box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-        margin-bottom: 25px;
-    }
 
-    .hero-badge {
-        display: inline-block;
-        padding: 6px 12px;
-        border-radius: 999px;
-        background: rgba(99,102,241,0.15);
-        border: 1px solid rgba(129,140,248,0.3);
-        color: #a5b4fc;
-        font-size: 13px;
-        font-weight: 600;
-        margin-bottom: 12px;
-    }
+    padding: 38px 42px;
+    border-radius: 24px;
 
-    .hero-title {
-        font-size: 42px;
-        font-weight: 800;
-        margin: 0;
-        letter-spacing: -1px;
-    }
+    box-shadow:
+        0 20px 50px rgba(0,0,0,0.35);
 
-    .hero-subtitle {
-        color: #94a3b8;
-        font-size: 17px;
-        margin-top: 10px;
-        line-height: 1.6;
-    }
+    margin-bottom: 30px;
 
-    /* ---------- Cards ---------- */
+    position: relative;
+    overflow: hidden;
+}
 
-    .card {
-        padding: 22px;
-        border-radius: 20px;
-        background: rgba(15,23,42,0.72);
-        border: 1px solid rgba(148,163,184,0.12);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.18);
-        margin-bottom: 18px;
-    }
+.hero::before {
+    content: "";
+    position: absolute;
+    width: 250px;
+    height: 250px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    right: -80px;
+    top: -100px;
+}
 
-    .card-title {
-        font-size: 18px;
-        font-weight: 700;
-        margin-bottom: 5px;
-    }
+.hero::after {
+    content: "";
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+    left: 40%;
+    bottom: -100px;
+}
 
-    .card-description {
-        color: #94a3b8;
-        font-size: 14px;
-    }
+.hero-content {
+    position: relative;
+    z-index: 2;
+}
 
-    /* ---------- Result ---------- */
+.hero h1 {
+    font-size: 42px;
+    font-weight: 800;
+    margin: 0;
+    color: white;
+    letter-spacing: -1px;
+}
 
-    .result-ai {
-        padding: 30px;
-        border-radius: 22px;
-        background: linear-gradient(
+.hero p {
+    font-size: 17px;
+    color: rgba(255,255,255,0.88);
+    margin-top: 10px;
+    max-width: 750px;
+}
+
+
+/* ---------- SECTION HEADINGS ---------- */
+
+.section-title {
+    font-size: 25px;
+    font-weight: 750;
+    color: #f8fafc;
+    margin-top: 25px;
+    margin-bottom: 5px;
+}
+
+.section-subtitle {
+    color: #94a3b8;
+    font-size: 14px;
+    margin-bottom: 18px;
+}
+
+
+/* ---------- CARDS ---------- */
+
+.card {
+    background: rgba(15,23,42,0.78);
+    border: 1px solid rgba(148,163,184,0.14);
+    border-radius: 18px;
+    padding: 24px;
+
+    box-shadow:
+        0 12px 30px rgba(0,0,0,0.18);
+
+    backdrop-filter: blur(10px);
+
+    transition:
+        transform 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(96,165,250,0.45);
+}
+
+
+/* ---------- FEATURE CARDS ---------- */
+
+.feature-card {
+    background: linear-gradient(
+        145deg,
+        rgba(30,41,59,0.9),
+        rgba(15,23,42,0.9)
+    );
+
+    border: 1px solid rgba(148,163,184,0.12);
+    border-radius: 18px;
+    padding: 22px;
+
+    height: 100%;
+
+    transition: all 0.25s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(96,165,250,0.5);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+}
+
+.feature-icon {
+    font-size: 30px;
+}
+
+.feature-title {
+    font-weight: 700;
+    font-size: 17px;
+    margin-top: 10px;
+    color: #f8fafc;
+}
+
+.feature-text {
+    font-size: 13px;
+    color: #94a3b8;
+    margin-top: 5px;
+}
+
+
+/* ---------- TEXT AREA ---------- */
+
+.stTextArea textarea {
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+
+    border: 1px solid #334155 !important;
+    border-radius: 14px !important;
+
+    font-size: 16px !important;
+    line-height: 1.6 !important;
+
+    padding: 16px !important;
+
+    transition: all 0.2s ease !important;
+}
+
+.stTextArea textarea:focus {
+    border-color: #60a5fa !important;
+
+    box-shadow:
+        0 0 0 2px rgba(96,165,250,0.15) !important;
+}
+
+
+/* ---------- SELECT BOX ---------- */
+
+div[data-baseweb="select"] > div {
+    background-color: #0f172a !important;
+    border: 1px solid #334155 !important;
+    border-radius: 12px !important;
+    color: white !important;
+}
+
+
+/* ---------- BUTTONS ---------- */
+
+.stButton > button {
+    border-radius: 12px !important;
+
+    border: 1px solid rgba(96,165,250,0.25) !important;
+
+    background:
+        linear-gradient(
             135deg,
-            rgba(127,29,29,0.35),
-            rgba(30,41,59,0.8)
-        );
-        border: 1px solid rgba(248,113,113,0.35);
-        text-align: center;
-        margin: 20px 0;
-    }
+            #2563eb,
+            #7c3aed
+        ) !important;
 
-    .result-human {
-        padding: 30px;
-        border-radius: 22px;
-        background: linear-gradient(
+    color: white !important;
+
+    font-weight: 700 !important;
+
+    padding: 10px 20px !important;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease !important;
+}
+
+.stButton > button:hover {
+    transform: translateY(-2px) !important;
+
+    box-shadow:
+        0 8px 25px rgba(59,130,246,0.35) !important;
+
+    border-color: rgba(255,255,255,0.25) !important;
+}
+
+
+/* ---------- SECONDARY BUTTON ---------- */
+
+.secondary-button button {
+    background: #1e293b !important;
+}
+
+
+/* ---------- PREDICTION CARDS ---------- */
+
+.ai-result {
+    background:
+        linear-gradient(
             135deg,
-            rgba(20,83,45,0.35),
-            rgba(30,41,59,0.8)
+            rgba(127,29,29,0.65),
+            rgba(30,15,20,0.9)
         );
-        border: 1px solid rgba(74,222,128,0.35);
-        text-align: center;
-        margin: 20px 0;
-    }
 
-    .result-icon {
-        font-size: 45px;
-    }
+    border: 1px solid rgba(248,113,113,0.4);
 
-    .result-label {
-        font-size: 28px;
-        font-weight: 800;
-        margin-top: 8px;
-    }
+    border-radius: 20px;
 
-    .result-confidence {
-        color: #cbd5e1;
-        margin-top: 5px;
-    }
+    padding: 28px;
 
-    /* ---------- Stats ---------- */
+    box-shadow:
+        0 15px 40px rgba(127,29,29,0.15);
+}
 
-    .stat-card {
-        padding: 18px;
-        border-radius: 16px;
-        background: rgba(30,41,59,0.6);
-        border: 1px solid rgba(148,163,184,0.1);
-        text-align: center;
-    }
+.human-result {
+    background:
+        linear-gradient(
+            135deg,
+            rgba(6,78,59,0.65),
+            rgba(10,30,25,0.9)
+        );
 
-    .stat-number {
-        font-size: 25px;
-        font-weight: 750;
-    }
+    border: 1px solid rgba(52,211,153,0.4);
 
-    .stat-label {
-        color: #94a3b8;
-        font-size: 13px;
-        margin-top: 4px;
-    }
+    border-radius: 20px;
 
-    /* ---------- Info ---------- */
+    padding: 28px;
 
-    .info-box {
-        padding: 18px;
-        border-radius: 16px;
-        background: rgba(30,41,59,0.55);
-        border-left: 4px solid #818cf8;
-        color: #cbd5e1;
-        line-height: 1.6;
-    }
+    box-shadow:
+        0 15px 40px rgba(6,78,59,0.15);
+}
 
-    .warning-box {
-        padding: 18px;
-        border-radius: 16px;
-        background: rgba(120,53,15,0.22);
-        border: 1px solid rgba(251,191,36,0.25);
-        color: #fde68a;
-        line-height: 1.6;
-    }
+.result-label {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #cbd5e1;
+}
 
-    /* ---------- Sidebar ---------- */
+.result-title {
+    font-size: 32px;
+    font-weight: 800;
+    margin-top: 6px;
+}
 
-    [data-testid="stSidebar"] {
-        background: #0f172a;
-        border-right: 1px solid rgba(148,163,184,0.1);
-    }
+.result-description {
+    color: #cbd5e1;
+    font-size: 14px;
+    margin-top: 8px;
+}
 
-    /* ---------- Buttons ---------- */
 
-    .stButton > button {
-        border-radius: 12px;
-        font-weight: 600;
-        min-height: 45px;
-    }
+/* ---------- STAT CARDS ---------- */
 
-    /* ---------- Text Area ---------- */
+.stat-card {
+    background: #111827;
 
-    textarea {
-        border-radius: 15px !important;
-    }
+    border: 1px solid rgba(148,163,184,0.12);
 
-    /* ---------- Footer ---------- */
+    border-radius: 14px;
 
-    .footer {
-        text-align: center;
-        color: #64748b;
-        font-size: 13px;
-        padding-top: 25px;
-    }
+    padding: 16px;
 
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 23px;
+    font-weight: 800;
+    color: #60a5fa;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 3px;
+}
+
+
+/* ---------- CONFIDENCE ---------- */
+
+.confidence-box {
+    background: rgba(15,23,42,0.8);
+
+    border: 1px solid rgba(148,163,184,0.12);
+
+    border-radius: 18px;
+
+    padding: 22px;
+
+    margin-top: 18px;
+}
+
+.confidence-number {
+    font-size: 38px;
+    font-weight: 850;
+    color: #60a5fa;
+}
+
+
+/* ---------- BADGES ---------- */
+
+.badge {
+    display: inline-block;
+
+    padding: 5px 12px;
+
+    border-radius: 999px;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    background: rgba(96,165,250,0.12);
+
+    color: #93c5fd;
+
+    border: 1px solid rgba(96,165,250,0.25);
+}
+
+
+/* ---------- INFO BOX ---------- */
+
+.info-box {
+    background: rgba(30,41,59,0.65);
+
+    border-left: 4px solid #60a5fa;
+
+    padding: 15px 18px;
+
+    border-radius: 10px;
+
+    color: #cbd5e1;
+
+    font-size: 14px;
+}
+
+
+/* ---------- FOOTER ---------- */
+
+.footer {
+    text-align: center;
+
+    color: #64748b;
+
+    font-size: 12px;
+
+    padding-top: 30px;
+
+    padding-bottom: 10px;
+}
+
+
+/* ---------- HIDE STREAMLIT DEFAULT ELEMENTS ---------- */
+
+#MainMenu {
+    visibility: hidden;
+}
+
+footer {
+    visibility: hidden;
+}
+
+header {
+    visibility: hidden;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 
 # =========================================================
-# PATHS
+# MODEL ARTIFACTS
 # =========================================================
 
 ARTIFACTS_DIR = os.path.join(
@@ -251,10 +492,6 @@ ARTIFACTS_DIR = os.path.join(
     "artifacts"
 )
 
-
-# =========================================================
-# LOAD MODEL ARTIFACTS
-# =========================================================
 
 @st.cache_resource
 def load_artifacts():
@@ -280,34 +517,31 @@ def load_artifacts():
         )
     )
 
-    linear_svm = joblib.load(
-        os.path.join(
-            ARTIFACTS_DIR,
-            "linear_svm.joblib"
-        )
-    )
-
-    logistic_regression = joblib.load(
-        os.path.join(
-            ARTIFACTS_DIR,
-            "logistic_regression.joblib"
-        )
-    )
-
-    # XGBoost model was saved with joblib.dump() during training,
-    # so it must be loaded with joblib.load() too — not XGBClassifier().load_model(),
-    # which expects a native .json/.ubj file that was never created.
-    xgb_model = joblib.load(
-        os.path.join(
-            ARTIFACTS_DIR,
-            "xgboost.joblib"
-        )
-    )
-
     models = {
-        "Linear SVM": linear_svm,
-        "Logistic Regression": logistic_regression,
-        "XGBoost": xgb_model,
+
+        "Linear SVM":
+            joblib.load(
+                os.path.join(
+                    ARTIFACTS_DIR,
+                    "linear_svm.joblib"
+                )
+            ),
+
+        "Logistic Regression":
+            joblib.load(
+                os.path.join(
+                    ARTIFACTS_DIR,
+                    "logistic_regression.joblib"
+                )
+            ),
+
+        "XGBoost":
+            joblib.load(
+                os.path.join(
+                    ARTIFACTS_DIR,
+                    "xgboost.joblib"
+                )
+            )
     }
 
     return word_vec, char_vec, scaler, models
@@ -316,10 +550,6 @@ def load_artifacts():
 word_vec, char_vec, scaler, models = load_artifacts()
 
 
-# =========================================================
-# LABELS
-# =========================================================
-
 LABELS = [
     "OR (Human-written)",
     "CG (AI-generated)"
@@ -327,14 +557,18 @@ LABELS = [
 
 
 # =========================================================
-# STYLometric FEATURES
+# FEATURE ENGINEERING
 # =========================================================
 
 def stylometric_features(text_series):
 
-    feats = pd.DataFrame(index=text_series.index)
+    feats = pd.DataFrame(
+        index=text_series.index
+    )
 
-    feats["char_len"] = text_series.str.len()
+    feats["char_len"] = (
+        text_series.str.len()
+    )
 
     feats["word_count"] = (
         text_series
@@ -347,25 +581,34 @@ def stylometric_features(text_series):
         feats["word_count"].replace(0, 1)
     )
 
-    feats["punct_ratio"] = text_series.apply(
-        lambda t:
-        sum(
-            1 for c in t
-            if c in ".,!?;:"
-        ) / max(len(t), 1)
+    feats["punct_ratio"] = (
+        text_series.apply(
+            lambda t:
+            sum(
+                1
+                for c in t
+                if c in ".,!?;:"
+            )
+            /
+            max(len(t), 1)
+        )
     )
 
-    feats["upper_ratio"] = text_series.apply(
-        lambda t:
-        sum(
-            1 for c in t
-            if c.isupper()
-        ) / max(len(t), 1)
+    feats["upper_ratio"] = (
+        text_series.apply(
+            lambda t:
+            sum(
+                1
+                for c in t
+                if c.isupper()
+            )
+            /
+            max(len(t), 1)
+        )
     )
 
     feats["exclaim_count"] = (
-        text_series
-        .str.count("!")
+        text_series.str.count("!")
     )
 
     return feats
@@ -395,31 +638,35 @@ def predict(text, model):
 
     if hasattr(model, "predict_proba"):
 
-        probabilities = model.predict_proba(X)[0]
-
-        # Class 1 = AI generated
-        conf_ai = float(probabilities[1])
+        conf = model.predict_proba(X)[0, 1]
 
     elif hasattr(model, "decision_function"):
 
-        decision = float(
-            model.decision_function(X)[0]
-        )
+        decision = model.decision_function(X)[0]
 
-        conf_ai = float(
-            1 / (1 + np.exp(-decision))
+        conf = 1 / (
+            1 + np.exp(-decision)
         )
 
     else:
 
-        conf_ai = float(pred)
+        conf = float(pred)
 
-    if pred == 1:
-        label = LABELS[1]
-    else:
-        label = LABELS[0]
+    return LABELS[pred], float(conf)
 
-    return label, conf_ai
+
+# =========================================================
+# SESSION STATE
+# =========================================================
+
+if "review_text" not in st.session_state:
+    st.session_state.review_text = ""
+
+if "analysis_done" not in st.session_state:
+    st.session_state.analysis_done = False
+
+if "result" not in st.session_state:
+    st.session_state.result = None
 
 
 # =========================================================
@@ -430,65 +677,49 @@ with st.sidebar:
 
     st.markdown(
         """
-        <div style="text-align:center">
+        <div style="
+            text-align:center;
+            padding:10px 0 25px 0;
+        ">
+            <div style="font-size:50px;">🕵️</div>
 
-        <div style="font-size:55px">🕵️</div>
+            <h2 style="
+                margin:5px 0;
+                color:#f8fafc;
+            ">
+                Review Detector
+            </h2>
 
-        <h2 style="margin-bottom:0">
-        AI Review Detector
-        </h2>
-
-        <p style="color:#94a3b8">
-        ML-powered review authenticity analysis
-        </p>
-
+            <span class="badge">
+                AI / ML PROJECT
+            </span>
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    st.divider()
 
-    st.markdown("### ⚙️ Detection Model")
-
-    model_choice = st.selectbox(
-        "Choose model",
-        list(models.keys()),
-        index=0,
-        help="Select the machine learning model used for prediction."
+    st.markdown(
+        "### ⚡ Quick Examples"
     )
-
-    model_descriptions = {
-
-        "Linear SVM":
-            "Fast and effective linear classifier.",
-
-        "Logistic Regression":
-            "Probability-based linear classification model.",
-
-        "XGBoost":
-            "Gradient boosting model designed for strong classification performance."
-    }
 
     st.caption(
-        model_descriptions[model_choice]
+        "Select an example to test the detector."
     )
 
-    st.divider()
-
-    st.markdown("### 🧪 Try Sample Reviews")
 
     examples = {
 
-        "🤖 AI-style review":
-            "I recently purchased this item and I am extremely satisfied with the quality and performance. It exceeded my expectations and I would highly recommend it to anyone looking for a reliable product.",
+        "🤖 AI-Generated":
+            "I recently purchased this item and I am extremely satisfied with the quality and performance. It exceeded my expectations and I would highly recommend it to anyone in the market for this type of product.",
 
-        "👤 Human-style review":
+        "👤 Human-Written":
             "took forever to arrive bc of some shipping delay but once it got here it worked fine. my cat knocked it off the counter on day 2 and it still works so thats a plus lol",
 
-        "⚖️ Short / borderline":
+        "⚖️ Borderline":
             "Does what it says. No complaints."
     }
+
 
     for label, text in examples.items():
 
@@ -497,45 +728,101 @@ with st.sidebar:
             use_container_width=True
         ):
 
-            st.session_state[
-                "review_text"
-            ] = text
+            st.session_state.review_text = text
+            st.session_state.analysis_done = False
+
+            st.rerun()
+
 
     st.divider()
 
-    st.markdown("### 📌 About")
 
-    st.caption(
+    st.markdown(
+        "### 🧠 Detection Models"
+    )
+
+    st.markdown(
         """
-        This academic project uses:
+        **Linear SVM**  
+        Fast classification using a linear decision boundary.
 
-        • Word TF-IDF features  
-        • Character TF-IDF features  
-        • Stylometric features  
-        • Multiple ML classifiers
+        **Logistic Regression**  
+        Probabilistic text classification.
+
+        **XGBoost**  
+        Gradient boosting model for classification.
         """
     )
 
 
+    st.divider()
+
+
+    st.markdown(
+        "### 📊 Features"
+    )
+
+    st.markdown(
+        """
+        • Word-level TF-IDF  
+        • Character-level TF-IDF  
+        • Stylometric features  
+        • Machine Learning classification
+        """
+    )
+
+
+    st.divider()
+
+    st.caption(
+        "AI Review Detector • FYP / Portfolio Project"
+    )
+
+
 # =========================================================
-# HERO SECTION
+# HERO
 # =========================================================
 
 st.markdown(
     """
     <div class="hero">
 
-        <div class="hero-badge">
-            🔬 MACHINE LEARNING • NLP • TEXT ANALYSIS
-        </div>
+        <div class="hero-content">
 
-        <div class="hero-title">
-            AI-Generated Review Detector
-        </div>
+            <div style="
+                font-size:14px;
+                font-weight:700;
+                letter-spacing:2px;
+                margin-bottom:10px;
+                color:#dbeafe;
+            ">
+                AI / MACHINE LEARNING
+            </div>
 
-        <div class="hero-subtitle">
-            Analyze product reviews and estimate whether the text
-            appears to be <b>human-written</b> or <b>AI-generated</b>.
+            <h1>
+                🕵️ AI-Generated Review Detector
+            </h1>
+
+            <p>
+                Analyze product reviews using machine learning
+                and determine whether the text resembles
+                human-written or AI-generated content.
+            </p>
+
+            <div style="margin-top:18px;">
+                <span class="badge">
+                    TF-IDF
+                </span>
+
+                <span class="badge">
+                    Stylometry
+                </span>
+
+                <span class="badge">
+                    ML Classification
+                </span>
+            </div>
+
         </div>
 
     </div>
@@ -545,23 +832,29 @@ st.markdown(
 
 
 # =========================================================
-# TOP INFORMATION CARDS
+# FEATURE CARDS
 # =========================================================
 
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3 = st.columns(3)
+
 
 with col1:
 
     st.markdown(
         """
-        <div class="stat-card">
+        <div class="feature-card">
 
-            <div class="stat-number">
+            <div class="feature-icon">
                 📝
             </div>
 
-            <div class="stat-label">
+            <div class="feature-title">
                 Text Analysis
+            </div>
+
+            <div class="feature-text">
+                Extracts word, character and
+                writing-style patterns from reviews.
             </div>
 
         </div>
@@ -574,14 +867,19 @@ with col2:
 
     st.markdown(
         """
-        <div class="stat-card">
+        <div class="feature-card">
 
-            <div class="stat-number">
+            <div class="feature-icon">
                 🧠
             </div>
 
-            <div class="stat-label">
-                NLP + ML
+            <div class="feature-title">
+                Machine Learning
+            </div>
+
+            <div class="feature-text">
+                Compare multiple trained ML models
+                to classify the review.
             </div>
 
         </div>
@@ -594,81 +892,107 @@ with col3:
 
     st.markdown(
         """
-        <div class="stat-card">
+        <div class="feature-card">
 
-            <div class="stat-number">
-                3
+            <div class="feature-icon">
+                📊
             </div>
 
-            <div class="stat-label">
-                ML Models
+            <div class="feature-title">
+                Confidence Score
             </div>
 
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-
-with col4:
-
-    st.markdown(
-        """
-        <div class="stat-card">
-
-            <div class="stat-number">
-                ⚡
-            </div>
-
-            <div class="stat-label">
-                Instant Prediction
+            <div class="feature-text">
+                View the model's estimated confidence
+                for the AI-generated prediction.
             </div>
 
         </div>
         """,
         unsafe_allow_html=True
     )
-
-
-st.write("")
 
 
 # =========================================================
-# MAIN INPUT AREA
+# ANALYSIS SECTION
 # =========================================================
 
 st.markdown(
     """
-    <div class="card">
+    <div class="section-title">
+        🔍 Analyze a Review
+    </div>
 
-        <div class="card-title">
-            ✍️ Enter a Product Review
-        </div>
-
-        <div class="card-description">
-            Paste a review below and our machine learning model
-            will analyze its linguistic and stylometric patterns.
-        </div>
-
+    <div class="section-subtitle">
+        Enter a product review and select the machine learning model.
     </div>
     """,
     unsafe_allow_html=True
 )
 
 
-if "review_text" not in st.session_state:
-    st.session_state["review_text"] = ""
+# =========================================================
+# MODEL SELECTION
+# =========================================================
 
+model_col, info_col = st.columns(
+    [2, 3]
+)
+
+
+with model_col:
+
+    model_choice = st.selectbox(
+        "🤖 Detection Model",
+        list(models.keys()),
+        index=0
+    )
+
+    model = models[model_choice]
+
+
+with info_col:
+
+    descriptions = {
+
+        "Linear SVM":
+            "⚡ Fast and effective for high-dimensional TF-IDF text features.",
+
+        "Logistic Regression":
+            "📈 Provides probability-based classification.",
+
+        "XGBoost":
+            "🚀 Gradient boosting model capable of learning complex patterns."
+    }
+
+    st.markdown(
+        f"""
+        <div class="info-box" style="margin-top:28px;">
+            {descriptions[model_choice]}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+# =========================================================
+# REVIEW INPUT
+# =========================================================
 
 review_text = st.text_area(
-    "Review",
-    value=st.session_state["review_text"],
-    height=220,
-    label_visibility="collapsed",
+    "✍️ Review Text",
+
+    value=st.session_state.review_text,
+
+    height=190,
+
     placeholder=(
-        "Example: I bought this product last week and honestly "
-        "I wasn't expecting much, but it works surprisingly well..."
-    )
+        "Paste a product review here...\n\n"
+        "Example: The product arrived quickly and works exactly "
+        "as described. The quality is excellent for the price."
+    ),
+
+    key="review_input"
 )
 
 
@@ -676,37 +1000,116 @@ review_text = st.text_area(
 # TEXT STATISTICS
 # =========================================================
 
-word_count = len(review_text.split())
+word_count = len(
+    review_text.split()
+)
 
-character_count = len(review_text)
+char_count = len(
+    review_text
+)
 
-sentence_count = max(
-    1,
-    sum(
-        review_text.count(x)
-        for x in [".", "!", "?"]
+sentence_count = (
+    review_text.count(".")
+    +
+    review_text.count("!")
+    +
+    review_text.count("?")
+)
+
+
+st.markdown(
+    "<div style='height:8px'></div>",
+    unsafe_allow_html=True
+)
+
+
+stat1, stat2, stat3, stat4 = st.columns(4)
+
+
+with stat1:
+
+    st.markdown(
+        f"""
+        <div class="stat-card">
+
+            <div class="stat-value">
+                {word_count}
+            </div>
+
+            <div class="stat-label">
+                WORDS
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True
     )
-) if review_text.strip() else 0
 
 
-c1, c2, c3 = st.columns(3)
+with stat2:
 
-with c1:
-    st.metric(
-        "Words",
-        word_count
+    st.markdown(
+        f"""
+        <div class="stat-card">
+
+            <div class="stat-value">
+                {char_count}
+            </div>
+
+            <div class="stat-label">
+                CHARACTERS
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
-with c2:
-    st.metric(
-        "Characters",
-        character_count
+
+with stat3:
+
+    st.markdown(
+        f"""
+        <div class="stat-card">
+
+            <div class="stat-value">
+                {sentence_count}
+            </div>
+
+            <div class="stat-label">
+                SENTENCES
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
-with c3:
-    st.metric(
-        "Sentences",
-        sentence_count
+
+with stat4:
+
+    if word_count < 5:
+        status = "SHORT"
+    elif word_count < 30:
+        status = "MEDIUM"
+    else:
+        status = "GOOD"
+
+    st.markdown(
+        f"""
+        <div class="stat-card">
+
+            <div class="stat-value">
+                {status}
+            </div>
+
+            <div class="stat-label">
+                TEXT LENGTH
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
 
@@ -714,54 +1117,87 @@ with c3:
 # ACTION BUTTONS
 # =========================================================
 
+st.markdown(
+    "<div style='height:18px'></div>",
+    unsafe_allow_html=True
+)
+
+
 button1, button2, button3 = st.columns(
     [2, 1, 1]
 )
 
+
 with button1:
 
     analyze = st.button(
-        "🔍 Analyze Review",
-        type="primary",
+        "🔍  Analyze Review",
         use_container_width=True
     )
+
 
 with button2:
 
-    clear = st.button(
-        "🗑️ Clear",
-        use_container_width=True
-    )
-
-with button3:
-
     if st.button(
-        "🎲 Random Example",
+        "🧹 Clear",
         use_container_width=True
     ):
 
-        random_text = np.random.choice(
-            list(examples.values())
-        )
-
-        st.session_state[
-            "review_text"
-        ] = random_text
+        st.session_state.review_text = ""
+        st.session_state.analysis_done = False
+        st.session_state.result = None
 
         st.rerun()
 
 
-if clear:
+with button3:
 
-    st.session_state[
-        "review_text"
-    ] = ""
+    if st.button(
+        "ℹ️ About",
+        use_container_width=True
+    ):
 
-    st.rerun()
+        st.session_state["show_about"] = not st.session_state.get(
+            "show_about",
+            False
+        )
 
 
 # =========================================================
-# ANALYSIS
+# ABOUT
+# =========================================================
+
+if st.session_state.get(
+    "show_about",
+    False
+):
+
+    st.markdown(
+        """
+        <div class="card">
+
+        <h3>🧠 About This Project</h3>
+
+        <p style="color:#94a3b8;">
+        This academic project uses natural language processing
+        and machine learning to classify reviews as either
+        human-written or AI-generated.
+        </p>
+
+        <p style="color:#94a3b8;">
+        The system combines word-level TF-IDF,
+        character-level TF-IDF and stylometric features
+        before passing them to the selected classifier.
+        </p>
+
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+# =========================================================
+# ANALYZE
 # =========================================================
 
 if analyze:
@@ -772,12 +1208,11 @@ if analyze:
             "⚠️ Please enter a review before analyzing."
         )
 
-    elif len(review_text.strip()) < 10:
+    elif word_count < 3:
 
         st.warning(
-            "⚠️ The review is very short. "
-            "Longer text generally provides more information "
-            "for the model."
+            "⚠️ This review is extremely short. "
+            "The prediction may not be reliable."
         )
 
     else:
@@ -786,255 +1221,287 @@ if analyze:
             "🧠 Analyzing linguistic patterns..."
         ):
 
-            label, conf_ai = predict(
+            label, conf = predict(
                 review_text,
-                models[model_choice]
+                model
             )
 
-        conf_ai = float(
+        conf = float(
             np.clip(
-                conf_ai,
-                0,
-                1
+                conf,
+                0.0,
+                1.0
             )
         )
 
-        conf_human = 1 - conf_ai
+        is_ai = "CG" in label
 
-        is_ai = (
-            "CG" in label
+        st.session_state.analysis_done = True
+
+        st.session_state.result = (
+            label,
+            conf,
+            is_ai,
+            model_choice
         )
 
 
-        # =================================================
-        # RESULT
-        # =================================================
+# =========================================================
+# RESULTS
+# =========================================================
 
-        st.divider()
+if st.session_state.result is not None:
 
-        if is_ai:
+    label, conf, is_ai, selected_model = (
+        st.session_state.result
+    )
 
-            st.markdown(
-                f"""
-                <div class="result-ai">
+    st.divider()
 
-                    <div class="result-icon">
-                        🤖
-                    </div>
+    st.markdown(
+        """
+        <div class="section-title">
+            📊 Analysis Result
+        </div>
 
-                    <div class="result-label">
-                        AI-Generated
-                    </div>
-
-                    <div class="result-confidence">
-                        The model estimates a
-                        <b>{conf_ai:.1%}</b>
-                        probability of AI-generated text.
-                    </div>
-
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-        else:
-
-            st.markdown(
-                f"""
-                <div class="result-human">
-
-                    <div class="result-icon">
-                        👤
-                    </div>
-
-                    <div class="result-label">
-                        Human-Written
-                    </div>
-
-                    <div class="result-confidence">
-                        The model estimates a
-                        <b>{conf_human:.1%}</b>
-                        probability of human-written text.
-                    </div>
-
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+        <div class="section-subtitle">
+            Classification generated by the selected machine learning model.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 
-        # =================================================
-        # PROBABILITY BREAKDOWN
-        # =================================================
+    if is_ai:
 
         st.markdown(
-            "### 📊 Prediction Breakdown"
-        )
+            f"""
+            <div class="ai-result">
 
-        p1, p2 = st.columns(2)
-
-        with p1:
-
-            st.metric(
-                "🤖 AI-Generated Probability",
-                f"{conf_ai:.1%}"
-            )
-
-            st.progress(
-                conf_ai
-            )
-
-        with p2:
-
-            st.metric(
-                "👤 Human-Written Probability",
-                f"{conf_human:.1%}"
-            )
-
-            st.progress(
-                conf_human
-            )
-
-
-        # =================================================
-        # CONFIDENCE WARNING
-        # =================================================
-
-        if 0.40 <= conf_ai <= 0.60:
-
-            st.markdown(
-                """
-                <div class="warning-box">
-
-                ⚠️ <b>Borderline prediction</b><br><br>
-
-                The model is relatively uncertain about this review.
-                A probability close to 50% means the text contains
-                characteristics that could be associated with either
-                human or AI-generated writing.
-
+                <div class="result-label">
+                    🔴 DETECTION RESULT
                 </div>
-                """,
-                unsafe_allow_html=True
-            )
 
+                <div class="result-title">
+                    AI-Generated Review
+                </div>
 
-        elif conf_ai >= 0.80 or conf_ai <= 0.20:
-
-            st.success(
-                "The model has relatively high confidence in this prediction."
-            )
-
-
-        # =================================================
-        # REVIEW ANALYSIS
-        # =================================================
-
-        st.markdown(
-            "### 🔬 Review Analysis"
-        )
-
-        a1, a2, a3, a4 = st.columns(4)
-
-        with a1:
-
-            st.metric(
-                "Words",
-                word_count
-            )
-
-        with a2:
-
-            st.metric(
-                "Characters",
-                character_count
-            )
-
-        with a3:
-
-            avg_word_length = (
-                character_count /
-                max(word_count, 1)
-            )
-
-            st.metric(
-                "Avg. Word Length",
-                f"{avg_word_length:.1f}"
-            )
-
-        with a4:
-
-            exclamations = review_text.count("!")
-
-            st.metric(
-                "Exclamation Marks",
-                exclamations
-            )
-
-
-        # =================================================
-        # MODEL INFORMATION
-        # =================================================
-
-        with st.expander(
-            "🧠 How does this detector work?"
-        ):
-
-            st.markdown(
-                f"""
-                **Selected model:** `{model_choice}`
-
-                The detector combines multiple types of text
-                characteristics:
-
-                **1. Word-level TF-IDF**
-
-                Identifies important word and phrase patterns.
-
-                **2. Character-level TF-IDF**
-
-                Captures writing patterns at the character level,
-                including spelling, punctuation and word structure.
-
-                **3. Stylometric features**
-
-                The system also considers:
-
-                - Character length
-                - Word count
-                - Average word length
-                - Punctuation ratio
-                - Uppercase ratio
-                - Exclamation count
-
-                These features are combined and passed to the
-                selected machine learning classifier.
-                """
-            )
-
-
-        # =================================================
-        # DISCLAIMER
-        # =================================================
-
-        st.markdown(
-            """
-            <div class="info-box">
-
-            💡 <b>Important:</b>
-
-            This detector estimates whether text resembles patterns
-            found in AI-generated or human-written reviews.
-
-            It should not be treated as definitive proof of authorship.
-            Short reviews, unusual writing styles, edited AI text,
-            and text outside the training distribution may produce
-            unreliable predictions.
+                <div class="result-description">
+                    The review contains patterns that resemble
+                    AI-generated writing.
+                </div>
 
             </div>
             """,
             unsafe_allow_html=True
         )
+
+    else:
+
+        st.markdown(
+            f"""
+            <div class="human-result">
+
+                <div class="result-label">
+                    🟢 DETECTION RESULT
+                </div>
+
+                <div class="result-title">
+                    Human-Written Review
+                </div>
+
+                <div class="result-description">
+                    The review contains patterns that resemble
+                    naturally written human text.
+                </div>
+
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+
+    # =====================================================
+    # CONFIDENCE
+    # =====================================================
+
+    st.markdown(
+        f"""
+        <div class="confidence-box">
+
+            <div style="
+                color:#94a3b8;
+                font-size:13px;
+                font-weight:700;
+                text-transform:uppercase;
+                letter-spacing:1px;
+            ">
+                AI-Generated Probability
+            </div>
+
+            <div class="confidence-number">
+                {conf:.1%}
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+    st.progress(
+        conf
+    )
+
+
+    # =====================================================
+    # RESULT DETAILS
+    # =====================================================
+
+    result_col1, result_col2, result_col3 = st.columns(3)
+
+
+    with result_col1:
+
+        st.metric(
+            "Prediction",
+            "AI Generated"
+            if is_ai
+            else
+            "Human Written"
+        )
+
+
+    with result_col2:
+
+        st.metric(
+            "Confidence",
+            f"{conf:.1%}"
+        )
+
+
+    with result_col3:
+
+        st.metric(
+            "Model",
+            selected_model
+        )
+
+
+    # =====================================================
+    # INTERPRETATION
+    # =====================================================
+
+    if conf >= 0.80:
+
+        interpretation = (
+            "🔴 High confidence — the model has a strong "
+            "indication that this review is AI-generated."
+            if is_ai
+            else
+            "🟢 High confidence — the model strongly "
+            "associates this review with human-written text."
+        )
+
+    elif conf >= 0.60:
+
+        interpretation = (
+            "🟠 Moderate confidence — the review shows "
+            "some characteristics associated with AI-generated text."
+            if is_ai
+            else
+            "🟡 Moderate confidence — the review shows "
+            "some characteristics associated with human writing."
+        )
+
+    else:
+
+        interpretation = (
+            "⚪ Low confidence — the model is relatively "
+            "uncertain about this classification."
+        )
+
+
+    st.markdown(
+        f"""
+        <div class="info-box">
+            {interpretation}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+    # =====================================================
+    # TECHNICAL DETAILS
+    # =====================================================
+
+    with st.expander(
+        "🔬 View Technical Analysis"
+    ):
+
+        st.markdown(
+            """
+            ### Features Used
+
+            **1. Word-level TF-IDF**
+
+            Captures important words and word combinations
+            within the review.
+
+            **2. Character-level TF-IDF**
+
+            Captures character patterns, spelling styles,
+            word fragments and writing structures.
+
+            **3. Stylometric Features**
+
+            The model also considers:
+
+            - Character length
+            - Word count
+            - Average word length
+            - Punctuation ratio
+            - Uppercase ratio
+            - Exclamation count
+
+            These features are combined and passed to
+            the selected machine learning classifier.
+            """
+        )
+
+
+# =========================================================
+# DISCLAIMER
+# =========================================================
+
+st.markdown(
+    """
+    <div class="card" style="margin-top:35px;">
+
+        <div style="
+            font-size:16px;
+            font-weight:700;
+            margin-bottom:8px;
+        ">
+            ⚠️ Important Note
+        </div>
+
+        <div style="
+            color:#94a3b8;
+            font-size:13px;
+            line-height:1.6;
+        ">
+            This detector is an academic machine learning project.
+            Predictions are estimates rather than definitive proof
+            that a review was written by AI or a human.
+            Performance may vary on text outside the training domain.
+        </div>
+
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 
 # =========================================================
@@ -1045,13 +1512,14 @@ st.markdown(
     """
     <div class="footer">
 
-        <b>AI-Generated Review Detector</b><br>
-
-        Academic / Portfolio Machine Learning Project<br>
-
-        TF-IDF • Stylometric Features • Machine Learning
+        🕵️ AI-Generated Review Detector
+        <br>
+        Machine Learning • NLP • TF-IDF • Stylometric Analysis
+        <br><br>
+        FYP / Academic Portfolio Project
 
     </div>
     """,
     unsafe_allow_html=True
 )
+```
