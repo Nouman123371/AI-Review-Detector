@@ -110,6 +110,7 @@ if analyze:
         st.warning("Please enter a review first.")
     else:
         label, conf = predict(review_text, model)
+        conf = float(conf)  # st.progress requires a plain Python float, not numpy.float64
         is_ai = "CG" in label
 
         st.divider()
