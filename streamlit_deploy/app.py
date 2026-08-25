@@ -1,8 +1,7 @@
-```python
 """
 app.py — Professional AI-Generated Review Detector
 
-Run:
+Run locally:
     streamlit run app.py
 
 Folder structure:
@@ -17,11 +16,12 @@ Folder structure:
         xgboost.joblib
 """
 
-import streamlit as st
-import joblib
-import pandas as pd
-import numpy as np
 import os
+
+import joblib
+import numpy as np
+import pandas as pd
+import streamlit as st
 from scipy.sparse import hstack
 
 
@@ -33,7 +33,7 @@ st.set_page_config(
     page_title="AI Review Detector",
     page_icon="🕵️",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
 
@@ -41,457 +41,653 @@ st.set_page_config(
 # CUSTOM CSS
 # =========================================================
 
-st.markdown("""
-<style>
-
-/* ---------- GLOBAL ---------- */
-
-.stApp {
-    background:
-        radial-gradient(circle at 10% 10%, rgba(59,130,246,0.10), transparent 30%),
-        radial-gradient(circle at 90% 20%, rgba(139,92,246,0.10), transparent 30%),
-        #0b1120;
-    color: #f8fafc;
-}
-
-.block-container {
-    max-width: 1200px;
-    padding-top: 2rem;
-    padding-bottom: 3rem;
-}
-
-
-/* ---------- SIDEBAR ---------- */
-
-section[data-testid="stSidebar"] {
-    background:
-        linear-gradient(180deg, #111827 0%, #0f172a 100%);
-    border-right: 1px solid rgba(148,163,184,0.15);
-}
-
-section[data-testid="stSidebar"] h1,
-section[data-testid="stSidebar"] h2,
-section[data-testid="stSidebar"] h3 {
-    color: #f8fafc;
-}
-
-section[data-testid="stSidebar"] p {
-    color: #94a3b8;
-}
-
-
-/* ---------- HERO ---------- */
-
-.hero {
-    background:
-        linear-gradient(
-            135deg,
-            rgba(37,99,235,0.95),
-            rgba(124,58,237,0.95)
-        );
-
-    padding: 38px 42px;
-    border-radius: 24px;
-
-    box-shadow:
-        0 20px 50px rgba(0,0,0,0.35);
-
-    margin-bottom: 30px;
-
-    position: relative;
-    overflow: hidden;
-}
-
-.hero::before {
-    content: "";
-    position: absolute;
-    width: 250px;
-    height: 250px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.08);
-    right: -80px;
-    top: -100px;
-}
-
-.hero::after {
-    content: "";
-    position: absolute;
-    width: 180px;
-    height: 180px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.05);
-    left: 40%;
-    bottom: -100px;
-}
-
-.hero-content {
-    position: relative;
-    z-index: 2;
-}
-
-.hero h1 {
-    font-size: 42px;
-    font-weight: 800;
-    margin: 0;
-    color: white;
-    letter-spacing: -1px;
-}
-
-.hero p {
-    font-size: 17px;
-    color: rgba(255,255,255,0.88);
-    margin-top: 10px;
-    max-width: 750px;
-}
+st.markdown(
+    """
+    <style>
 
+    /* =========================
+       GLOBAL
+       ========================= */
 
-/* ---------- SECTION HEADINGS ---------- */
+    .stApp {
+        background:
+            radial-gradient(
+                circle at 10% 10%,
+                rgba(59, 130, 246, 0.12),
+                transparent 30%
+            ),
+            radial-gradient(
+                circle at 90% 15%,
+                rgba(139, 92, 246, 0.12),
+                transparent 30%
+            ),
+            #0b1120;
 
-.section-title {
-    font-size: 25px;
-    font-weight: 750;
-    color: #f8fafc;
-    margin-top: 25px;
-    margin-bottom: 5px;
-}
+        color: #f8fafc;
+    }
 
-.section-subtitle {
-    color: #94a3b8;
-    font-size: 14px;
-    margin-bottom: 18px;
-}
+    .block-container {
+        max-width: 1200px;
+        padding-top: 2rem;
+        padding-bottom: 3rem;
+    }
 
 
-/* ---------- CARDS ---------- */
+    /* =========================
+       SIDEBAR
+       ========================= */
 
-.card {
-    background: rgba(15,23,42,0.78);
-    border: 1px solid rgba(148,163,184,0.14);
-    border-radius: 18px;
-    padding: 24px;
+    section[data-testid="stSidebar"] {
+        background:
+            linear-gradient(
+                180deg,
+                #111827 0%,
+                #0f172a 100%
+            );
 
-    box-shadow:
-        0 12px 30px rgba(0,0,0,0.18);
+        border-right: 1px solid rgba(148, 163, 184, 0.15);
+    }
 
-    backdrop-filter: blur(10px);
+    section[data-testid="stSidebar"] h1,
+    section[data-testid="stSidebar"] h2,
+    section[data-testid="stSidebar"] h3 {
+        color: #f8fafc;
+    }
 
-    transition:
-        transform 0.2s ease,
-        border-color 0.2s ease;
-}
+    section[data-testid="stSidebar"] p {
+        color: #94a3b8;
+    }
 
-.card:hover {
-    transform: translateY(-2px);
-    border-color: rgba(96,165,250,0.45);
-}
 
+    /* =========================
+       HERO
+       ========================= */
 
-/* ---------- FEATURE CARDS ---------- */
+    .hero {
+        background:
+            linear-gradient(
+                135deg,
+                #2563eb,
+                #7c3aed
+            );
 
-.feature-card {
-    background: linear-gradient(
-        145deg,
-        rgba(30,41,59,0.9),
-        rgba(15,23,42,0.9)
-    );
+        padding: 40px 44px;
 
-    border: 1px solid rgba(148,163,184,0.12);
-    border-radius: 18px;
-    padding: 22px;
+        border-radius: 24px;
 
-    height: 100%;
+        box-shadow:
+            0 20px 50px rgba(0, 0, 0, 0.35);
 
-    transition: all 0.25s ease;
-}
+        margin-bottom: 30px;
 
-.feature-card:hover {
-    transform: translateY(-5px);
-    border-color: rgba(96,165,250,0.5);
-    box-shadow: 0 15px 35px rgba(0,0,0,0.25);
-}
+        position: relative;
 
-.feature-icon {
-    font-size: 30px;
-}
+        overflow: hidden;
+    }
 
-.feature-title {
-    font-weight: 700;
-    font-size: 17px;
-    margin-top: 10px;
-    color: #f8fafc;
-}
+    .hero::before {
+        content: "";
 
-.feature-text {
-    font-size: 13px;
-    color: #94a3b8;
-    margin-top: 5px;
-}
+        position: absolute;
 
+        width: 250px;
+        height: 250px;
 
-/* ---------- TEXT AREA ---------- */
+        border-radius: 50%;
 
-.stTextArea textarea {
-    background-color: #0f172a !important;
-    color: #f8fafc !important;
+        background:
+            rgba(255, 255, 255, 0.08);
 
-    border: 1px solid #334155 !important;
-    border-radius: 14px !important;
+        right: -80px;
+        top: -100px;
+    }
 
-    font-size: 16px !important;
-    line-height: 1.6 !important;
+    .hero::after {
+        content: "";
 
-    padding: 16px !important;
+        position: absolute;
 
-    transition: all 0.2s ease !important;
-}
+        width: 180px;
+        height: 180px;
 
-.stTextArea textarea:focus {
-    border-color: #60a5fa !important;
+        border-radius: 50%;
 
-    box-shadow:
-        0 0 0 2px rgba(96,165,250,0.15) !important;
-}
+        background:
+            rgba(255, 255, 255, 0.05);
 
+        left: 45%;
+        bottom: -100px;
+    }
 
-/* ---------- SELECT BOX ---------- */
+    .hero-content {
+        position: relative;
+        z-index: 2;
+    }
 
-div[data-baseweb="select"] > div {
-    background-color: #0f172a !important;
-    border: 1px solid #334155 !important;
-    border-radius: 12px !important;
-    color: white !important;
-}
+    .hero h1 {
+        font-size: 42px;
 
+        font-weight: 800;
 
-/* ---------- BUTTONS ---------- */
+        margin: 0;
 
-.stButton > button {
-    border-radius: 12px !important;
+        color: white;
 
-    border: 1px solid rgba(96,165,250,0.25) !important;
+        letter-spacing: -1px;
+    }
 
-    background:
-        linear-gradient(
-            135deg,
-            #2563eb,
-            #7c3aed
-        ) !important;
+    .hero p {
+        font-size: 17px;
 
-    color: white !important;
+        color:
+            rgba(255, 255, 255, 0.88);
 
-    font-weight: 700 !important;
+        margin-top: 10px;
 
-    padding: 10px 20px !important;
+        max-width: 780px;
+    }
 
-    transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease !important;
-}
 
-.stButton > button:hover {
-    transform: translateY(-2px) !important;
+    /* =========================
+       SECTION HEADINGS
+       ========================= */
 
-    box-shadow:
-        0 8px 25px rgba(59,130,246,0.35) !important;
+    .section-title {
+        font-size: 25px;
 
-    border-color: rgba(255,255,255,0.25) !important;
-}
+        font-weight: 750;
 
+        color: #f8fafc;
 
-/* ---------- SECONDARY BUTTON ---------- */
+        margin-top: 25px;
 
-.secondary-button button {
-    background: #1e293b !important;
-}
+        margin-bottom: 5px;
+    }
 
+    .section-subtitle {
+        color: #94a3b8;
 
-/* ---------- PREDICTION CARDS ---------- */
+        font-size: 14px;
 
-.ai-result {
-    background:
-        linear-gradient(
-            135deg,
-            rgba(127,29,29,0.65),
-            rgba(30,15,20,0.9)
-        );
+        margin-bottom: 18px;
+    }
 
-    border: 1px solid rgba(248,113,113,0.4);
 
-    border-radius: 20px;
+    /* =========================
+       CARDS
+       ========================= */
 
-    padding: 28px;
+    .card {
+        background:
+            rgba(15, 23, 42, 0.78);
 
-    box-shadow:
-        0 15px 40px rgba(127,29,29,0.15);
-}
+        border:
+            1px solid
+            rgba(148, 163, 184, 0.14);
 
-.human-result {
-    background:
-        linear-gradient(
-            135deg,
-            rgba(6,78,59,0.65),
-            rgba(10,30,25,0.9)
-        );
+        border-radius: 18px;
 
-    border: 1px solid rgba(52,211,153,0.4);
+        padding: 24px;
 
-    border-radius: 20px;
+        box-shadow:
+            0 12px 30px
+            rgba(0, 0, 0, 0.18);
 
-    padding: 28px;
+        backdrop-filter: blur(10px);
+    }
 
-    box-shadow:
-        0 15px 40px rgba(6,78,59,0.15);
-}
 
-.result-label {
-    font-size: 14px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: #cbd5e1;
-}
+    /* =========================
+       FEATURE CARDS
+       ========================= */
 
-.result-title {
-    font-size: 32px;
-    font-weight: 800;
-    margin-top: 6px;
-}
+    .feature-card {
+        background:
+            linear-gradient(
+                145deg,
+                rgba(30, 41, 59, 0.95),
+                rgba(15, 23, 42, 0.95)
+            );
 
-.result-description {
-    color: #cbd5e1;
-    font-size: 14px;
-    margin-top: 8px;
-}
+        border:
+            1px solid
+            rgba(148, 163, 184, 0.12);
 
+        border-radius: 18px;
 
-/* ---------- STAT CARDS ---------- */
+        padding: 22px;
 
-.stat-card {
-    background: #111827;
+        min-height: 145px;
 
-    border: 1px solid rgba(148,163,184,0.12);
+        transition:
+            all 0.25s ease;
+    }
 
-    border-radius: 14px;
+    .feature-card:hover {
+        transform:
+            translateY(-5px);
 
-    padding: 16px;
+        border-color:
+            rgba(96, 165, 250, 0.5);
 
-    text-align: center;
-}
+        box-shadow:
+            0 15px 35px
+            rgba(0, 0, 0, 0.25);
+    }
 
-.stat-value {
-    font-size: 23px;
-    font-weight: 800;
-    color: #60a5fa;
-}
+    .feature-icon {
+        font-size: 30px;
+    }
 
-.stat-label {
-    font-size: 12px;
-    color: #94a3b8;
-    margin-top: 3px;
-}
+    .feature-title {
+        font-weight: 700;
 
+        font-size: 17px;
 
-/* ---------- CONFIDENCE ---------- */
+        margin-top: 10px;
 
-.confidence-box {
-    background: rgba(15,23,42,0.8);
+        color: #f8fafc;
+    }
 
-    border: 1px solid rgba(148,163,184,0.12);
+    .feature-text {
+        font-size: 13px;
 
-    border-radius: 18px;
+        color: #94a3b8;
 
-    padding: 22px;
+        margin-top: 5px;
 
-    margin-top: 18px;
-}
+        line-height: 1.5;
+    }
 
-.confidence-number {
-    font-size: 38px;
-    font-weight: 850;
-    color: #60a5fa;
-}
 
+    /* =========================
+       TEXT AREA
+       ========================= */
 
-/* ---------- BADGES ---------- */
+    .stTextArea textarea {
+        background-color:
+            #0f172a !important;
 
-.badge {
-    display: inline-block;
+        color:
+            #f8fafc !important;
 
-    padding: 5px 12px;
+        border:
+            1px solid
+            #334155 !important;
 
-    border-radius: 999px;
+        border-radius:
+            14px !important;
 
-    font-size: 12px;
+        font-size:
+            16px !important;
 
-    font-weight: 700;
+        line-height:
+            1.6 !important;
 
-    background: rgba(96,165,250,0.12);
+        padding:
+            16px !important;
 
-    color: #93c5fd;
+        transition:
+            all 0.2s ease !important;
+    }
 
-    border: 1px solid rgba(96,165,250,0.25);
-}
+    .stTextArea textarea:focus {
+        border-color:
+            #60a5fa !important;
 
+        box-shadow:
+            0 0 0 2px
+            rgba(96, 165, 250, 0.15) !important;
+    }
 
-/* ---------- INFO BOX ---------- */
 
-.info-box {
-    background: rgba(30,41,59,0.65);
+    /* =========================
+       SELECT BOX
+       ========================= */
 
-    border-left: 4px solid #60a5fa;
+    div[data-baseweb="select"] > div {
+        background-color:
+            #0f172a !important;
 
-    padding: 15px 18px;
+        border:
+            1px solid
+            #334155 !important;
 
-    border-radius: 10px;
+        border-radius:
+            12px !important;
 
-    color: #cbd5e1;
+        color:
+            white !important;
+    }
 
-    font-size: 14px;
-}
 
+    /* =========================
+       BUTTONS
+       ========================= */
 
-/* ---------- FOOTER ---------- */
+    .stButton > button {
+        border-radius:
+            12px !important;
 
-.footer {
-    text-align: center;
+        border:
+            1px solid
+            rgba(96, 165, 250, 0.25) !important;
 
-    color: #64748b;
+        background:
+            linear-gradient(
+                135deg,
+                #2563eb,
+                #7c3aed
+            ) !important;
 
-    font-size: 12px;
+        color:
+            white !important;
 
-    padding-top: 30px;
+        font-weight:
+            700 !important;
 
-    padding-bottom: 10px;
-}
+        padding:
+            10px 20px !important;
 
+        transition:
+            transform 0.2s ease,
+            box-shadow 0.2s ease !important;
+    }
 
-/* ---------- HIDE STREAMLIT DEFAULT ELEMENTS ---------- */
+    .stButton > button:hover {
+        transform:
+            translateY(-2px) !important;
 
-#MainMenu {
-    visibility: hidden;
-}
+        box-shadow:
+            0 8px 25px
+            rgba(59, 130, 246, 0.35) !important;
 
-footer {
-    visibility: hidden;
-}
+        border-color:
+            rgba(255, 255, 255, 0.25) !important;
+    }
 
-header {
-    visibility: hidden;
-}
 
-</style>
-""", unsafe_allow_html=True)
+    /* =========================
+       RESULT CARDS
+       ========================= */
+
+    .ai-result {
+        background:
+            linear-gradient(
+                135deg,
+                rgba(127, 29, 29, 0.65),
+                rgba(30, 15, 20, 0.95)
+            );
+
+        border:
+            1px solid
+            rgba(248, 113, 113, 0.4);
+
+        border-radius: 20px;
+
+        padding: 28px;
+
+        box-shadow:
+            0 15px 40px
+            rgba(127, 29, 29, 0.15);
+    }
+
+    .human-result {
+        background:
+            linear-gradient(
+                135deg,
+                rgba(6, 78, 59, 0.65),
+                rgba(10, 30, 25, 0.95)
+            );
+
+        border:
+            1px solid
+            rgba(52, 211, 153, 0.4);
+
+        border-radius: 20px;
+
+        padding: 28px;
+
+        box-shadow:
+            0 15px 40px
+            rgba(6, 78, 59, 0.15);
+    }
+
+    .result-label {
+        font-size: 14px;
+
+        font-weight: 700;
+
+        text-transform: uppercase;
+
+        letter-spacing: 1.5px;
+
+        color: #cbd5e1;
+    }
+
+    .result-title {
+        font-size: 32px;
+
+        font-weight: 800;
+
+        margin-top: 6px;
+    }
+
+    .result-description {
+        color: #cbd5e1;
+
+        font-size: 14px;
+
+        margin-top: 8px;
+
+        line-height: 1.5;
+    }
+
+
+    /* =========================
+       STAT CARDS
+       ========================= */
+
+    .stat-card {
+        background:
+            #111827;
+
+        border:
+            1px solid
+            rgba(148, 163, 184, 0.12);
+
+        border-radius:
+            14px;
+
+        padding:
+            16px;
+
+        text-align:
+            center;
+    }
+
+    .stat-value {
+        font-size:
+            23px;
+
+        font-weight:
+            800;
+
+        color:
+            #60a5fa;
+    }
+
+    .stat-label {
+        font-size:
+            12px;
+
+        color:
+            #94a3b8;
+
+        margin-top:
+            3px;
+    }
+
+
+    /* =========================
+       CONFIDENCE
+       ========================= */
+
+    .confidence-box {
+        background:
+            rgba(15, 23, 42, 0.8);
+
+        border:
+            1px solid
+            rgba(148, 163, 184, 0.12);
+
+        border-radius:
+            18px;
+
+        padding:
+            22px;
+
+        margin-top:
+            18px;
+    }
+
+    .confidence-number {
+        font-size:
+            38px;
+
+        font-weight:
+            850;
+
+        color:
+            #60a5fa;
+    }
+
+
+    /* =========================
+       BADGES
+       ========================= */
+
+    .badge {
+        display:
+            inline-block;
+
+        padding:
+            5px 12px;
+
+        border-radius:
+            999px;
+
+        font-size:
+            12px;
+
+        font-weight:
+            700;
+
+        background:
+            rgba(96, 165, 250, 0.12);
+
+        color:
+            #93c5fd;
+
+        border:
+            1px solid
+            rgba(96, 165, 250, 0.25);
+
+        margin-right:
+            5px;
+    }
+
+
+    /* =========================
+       INFO BOX
+       ========================= */
+
+    .info-box {
+        background:
+            rgba(30, 41, 59, 0.65);
+
+        border-left:
+            4px solid #60a5fa;
+
+        padding:
+            15px 18px;
+
+        border-radius:
+            10px;
+
+        color:
+            #cbd5e1;
+
+        font-size:
+            14px;
+
+        line-height:
+            1.5;
+    }
+
+
+    /* =========================
+       FOOTER
+       ========================= */
+
+    .footer {
+        text-align:
+            center;
+
+        color:
+            #64748b;
+
+        font-size:
+            12px;
+
+        padding-top:
+            30px;
+
+        padding-bottom:
+            10px;
+    }
+
+
+    /* =========================
+       STREAMLIT UI CLEANUP
+       ========================= */
+
+    #MainMenu {
+        visibility:
+            hidden;
+    }
+
+    footer {
+        visibility:
+            hidden;
+    }
+
+    header {
+        visibility:
+            hidden;
+    }
+
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 
 # =========================================================
-# MODEL ARTIFACTS
+# ARTIFACT DIRECTORY
 # =========================================================
 
 ARTIFACTS_DIR = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    "artifacts"
+    os.path.dirname(
+        os.path.abspath(__file__)
+    ),
+    "artifacts",
 )
 
+
+# =========================================================
+# LOAD MODEL ARTIFACTS
+# =========================================================
 
 @st.cache_resource
 def load_artifacts():
@@ -499,65 +695,70 @@ def load_artifacts():
     word_vec = joblib.load(
         os.path.join(
             ARTIFACTS_DIR,
-            "word_vectorizer.joblib"
+            "word_vectorizer.joblib",
         )
     )
 
     char_vec = joblib.load(
         os.path.join(
             ARTIFACTS_DIR,
-            "char_vectorizer.joblib"
+            "char_vectorizer.joblib",
         )
     )
 
     scaler = joblib.load(
         os.path.join(
             ARTIFACTS_DIR,
-            "style_scaler.joblib"
+            "style_scaler.joblib",
         )
     )
 
     models = {
-
-        "Linear SVM":
-            joblib.load(
-                os.path.join(
-                    ARTIFACTS_DIR,
-                    "linear_svm.joblib"
-                )
-            ),
-
-        "Logistic Regression":
-            joblib.load(
-                os.path.join(
-                    ARTIFACTS_DIR,
-                    "logistic_regression.joblib"
-                )
-            ),
-
-        "XGBoost":
-            joblib.load(
-                os.path.join(
-                    ARTIFACTS_DIR,
-                    "xgboost.joblib"
-                )
+        "Linear SVM": joblib.load(
+            os.path.join(
+                ARTIFACTS_DIR,
+                "linear_svm.joblib",
             )
+        ),
+
+        "Logistic Regression": joblib.load(
+            os.path.join(
+                ARTIFACTS_DIR,
+                "logistic_regression.joblib",
+            )
+        ),
+
+        "XGBoost": joblib.load(
+            os.path.join(
+                ARTIFACTS_DIR,
+                "xgboost.joblib",
+            )
+        ),
     }
 
-    return word_vec, char_vec, scaler, models
+    return (
+        word_vec,
+        char_vec,
+        scaler,
+        models,
+    )
 
 
 word_vec, char_vec, scaler, models = load_artifacts()
 
 
+# =========================================================
+# LABELS
+# =========================================================
+
 LABELS = [
     "OR (Human-written)",
-    "CG (AI-generated)"
+    "CG (AI-generated)",
 ]
 
 
 # =========================================================
-# FEATURE ENGINEERING
+# STYLOMETRIC FEATURES
 # =========================================================
 
 def stylometric_features(text_series):
@@ -577,33 +778,37 @@ def stylometric_features(text_series):
     )
 
     feats["avg_word_len"] = (
-        feats["char_len"] /
-        feats["word_count"].replace(0, 1)
+        feats["char_len"]
+        /
+        feats["word_count"].replace(
+            0,
+            1
+        )
     )
 
     feats["punct_ratio"] = (
         text_series.apply(
             lambda t:
-            sum(
-                1
-                for c in t
-                if c in ".,!?;:"
-            )
-            /
-            max(len(t), 1)
+                sum(
+                    1
+                    for c in t
+                    if c in ".,!?;:"
+                )
+                /
+                max(len(t), 1)
         )
     )
 
     feats["upper_ratio"] = (
         text_series.apply(
             lambda t:
-            sum(
-                1
-                for c in t
-                if c.isupper()
-            )
-            /
-            max(len(t), 1)
+                sum(
+                    1
+                    for c in t
+                    if c.isupper()
+                )
+                /
+                max(len(t), 1)
         )
     )
 
@@ -638,11 +843,15 @@ def predict(text, model):
 
     if hasattr(model, "predict_proba"):
 
-        conf = model.predict_proba(X)[0, 1]
+        conf = model.predict_proba(
+            X
+        )[0, 1]
 
     elif hasattr(model, "decision_function"):
 
-        decision = model.decision_function(X)[0]
+        decision = model.decision_function(
+            X
+        )[0]
 
         conf = 1 / (
             1 + np.exp(-decision)
@@ -652,7 +861,10 @@ def predict(text, model):
 
         conf = float(pred)
 
-    return LABELS[pred], float(conf)
+    return (
+        LABELS[pred],
+        float(conf),
+    )
 
 
 # =========================================================
@@ -662,11 +874,11 @@ def predict(text, model):
 if "review_text" not in st.session_state:
     st.session_state.review_text = ""
 
-if "analysis_done" not in st.session_state:
-    st.session_state.analysis_done = False
-
 if "result" not in st.session_state:
     st.session_state.result = None
+
+if "show_about" not in st.session_state:
+    st.session_state.show_about = False
 
 
 # =========================================================
@@ -681,7 +893,12 @@ with st.sidebar:
             text-align:center;
             padding:10px 0 25px 0;
         ">
-            <div style="font-size:50px;">🕵️</div>
+
+            <div style="
+                font-size:50px;
+            ">
+                🕵️
+            </div>
 
             <h2 style="
                 margin:5px 0;
@@ -693,11 +910,11 @@ with st.sidebar:
             <span class="badge">
                 AI / ML PROJECT
             </span>
+
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
-
 
     st.markdown(
         "### ⚡ Quick Examples"
@@ -707,35 +924,42 @@ with st.sidebar:
         "Select an example to test the detector."
     )
 
-
     examples = {
 
         "🤖 AI-Generated":
-            "I recently purchased this item and I am extremely satisfied with the quality and performance. It exceeded my expectations and I would highly recommend it to anyone in the market for this type of product.",
+            (
+                "I recently purchased this item and I am "
+                "extremely satisfied with the quality and "
+                "performance. It exceeded my expectations "
+                "and I would highly recommend it to anyone "
+                "in the market for this type of product."
+            ),
 
         "👤 Human-Written":
-            "took forever to arrive bc of some shipping delay but once it got here it worked fine. my cat knocked it off the counter on day 2 and it still works so thats a plus lol",
+            (
+                "took forever to arrive bc of some shipping "
+                "delay but once it got here it worked fine. "
+                "my cat knocked it off the counter on day 2 "
+                "and it still works so thats a plus lol"
+            ),
 
         "⚖️ Borderline":
-            "Does what it says. No complaints."
+            "Does what it says. No complaints.",
     }
-
 
     for label, text in examples.items():
 
         if st.button(
             label,
-            use_container_width=True
+            use_container_width=True,
         ):
 
             st.session_state.review_text = text
-            st.session_state.analysis_done = False
+            st.session_state.result = None
 
             st.rerun()
 
-
     st.divider()
-
 
     st.markdown(
         "### 🧠 Detection Models"
@@ -743,20 +967,22 @@ with st.sidebar:
 
     st.markdown(
         """
-        **Linear SVM**  
-        Fast classification using a linear decision boundary.
+        **Linear SVM**
 
-        **Logistic Regression**  
-        Probabilistic text classification.
+        Fast classification using a linear
+        decision boundary.
 
-        **XGBoost**  
-        Gradient boosting model for classification.
+        **Logistic Regression**
+
+        Probability-based text classification.
+
+        **XGBoost**
+
+        Gradient boosting classification model.
         """
     )
 
-
     st.divider()
-
 
     st.markdown(
         "### 📊 Features"
@@ -771,7 +997,6 @@ with st.sidebar:
         """
     )
 
-
     st.divider()
 
     st.caption(
@@ -780,7 +1005,7 @@ with st.sidebar:
 
 
 # =========================================================
-# HERO
+# HERO SECTION
 # =========================================================
 
 st.markdown(
@@ -810,6 +1035,7 @@ st.markdown(
             </p>
 
             <div style="margin-top:18px;">
+
                 <span class="badge">
                     TF-IDF
                 </span>
@@ -821,13 +1047,14 @@ st.markdown(
                 <span class="badge">
                     ML Classification
                 </span>
+
             </div>
 
         </div>
 
     </div>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 
@@ -859,7 +1086,7 @@ with col1:
 
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
 
@@ -884,7 +1111,7 @@ with col2:
 
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
 
@@ -909,7 +1136,7 @@ with col3:
 
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
 
@@ -924,10 +1151,11 @@ st.markdown(
     </div>
 
     <div class="section-subtitle">
-        Enter a product review and select the machine learning model.
+        Enter a product review and select the machine
+        learning model you want to use.
     </div>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 
@@ -945,7 +1173,7 @@ with model_col:
     model_choice = st.selectbox(
         "🤖 Detection Model",
         list(models.keys()),
-        index=0
+        index=0,
     )
 
     model = models[model_choice]
@@ -962,21 +1190,23 @@ with info_col:
             "📈 Provides probability-based classification.",
 
         "XGBoost":
-            "🚀 Gradient boosting model capable of learning complex patterns."
+            "🚀 Gradient boosting model capable of learning complex patterns.",
     }
 
     st.markdown(
         f"""
-        <div class="info-box" style="margin-top:28px;">
+        <div class="info-box" style="
+            margin-top:28px;
+        ">
             {descriptions[model_choice]}
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
 
 # =========================================================
-# REVIEW INPUT
+# REVIEW TEXT AREA
 # =========================================================
 
 review_text = st.text_area(
@@ -988,11 +1218,12 @@ review_text = st.text_area(
 
     placeholder=(
         "Paste a product review here...\n\n"
-        "Example: The product arrived quickly and works exactly "
-        "as described. The quality is excellent for the price."
+        "Example: The product arrived quickly and works "
+        "exactly as described. The quality is excellent "
+        "for the price."
     ),
 
-    key="review_input"
+    key="review_input",
 )
 
 
@@ -1017,9 +1248,17 @@ sentence_count = (
 )
 
 
+if word_count < 5:
+    length_status = "SHORT"
+elif word_count < 30:
+    length_status = "MEDIUM"
+else:
+    length_status = "GOOD"
+
+
 st.markdown(
     "<div style='height:8px'></div>",
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 
@@ -1042,7 +1281,7 @@ with stat1:
 
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
 
@@ -1062,7 +1301,7 @@ with stat2:
 
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
 
@@ -1082,25 +1321,18 @@ with stat3:
 
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
 
 with stat4:
-
-    if word_count < 5:
-        status = "SHORT"
-    elif word_count < 30:
-        status = "MEDIUM"
-    else:
-        status = "GOOD"
 
     st.markdown(
         f"""
         <div class="stat-card">
 
             <div class="stat-value">
-                {status}
+                {length_status}
             </div>
 
             <div class="stat-label">
@@ -1109,7 +1341,7 @@ with stat4:
 
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
 
@@ -1119,7 +1351,7 @@ with stat4:
 
 st.markdown(
     "<div style='height:18px'></div>",
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 
@@ -1131,20 +1363,21 @@ button1, button2, button3 = st.columns(
 with button1:
 
     analyze = st.button(
-        "🔍  Analyze Review",
-        use_container_width=True
+        "🔍 Analyze Review",
+        use_container_width=True,
     )
 
 
 with button2:
 
-    if st.button(
+    clear = st.button(
         "🧹 Clear",
-        use_container_width=True
-    ):
+        use_container_width=True,
+    )
+
+    if clear:
 
         st.session_state.review_text = ""
-        st.session_state.analysis_done = False
         st.session_state.result = None
 
         st.rerun()
@@ -1152,52 +1385,60 @@ with button2:
 
 with button3:
 
-    if st.button(
+    about = st.button(
         "ℹ️ About",
-        use_container_width=True
-    ):
+        use_container_width=True,
+    )
 
-        st.session_state["show_about"] = not st.session_state.get(
-            "show_about",
-            False
+    if about:
+
+        st.session_state.show_about = (
+            not st.session_state.show_about
         )
 
 
 # =========================================================
-# ABOUT
+# ABOUT SECTION
 # =========================================================
 
-if st.session_state.get(
-    "show_about",
-    False
-):
+if st.session_state.show_about:
 
     st.markdown(
         """
         <div class="card">
 
-        <h3>🧠 About This Project</h3>
+            <h3>
+                🧠 About This Project
+            </h3>
 
-        <p style="color:#94a3b8;">
-        This academic project uses natural language processing
-        and machine learning to classify reviews as either
-        human-written or AI-generated.
-        </p>
+            <p style="
+                color:#94a3b8;
+                line-height:1.7;
+            ">
+                This academic project uses Natural Language
+                Processing and Machine Learning to classify
+                reviews as either human-written or
+                AI-generated.
+            </p>
 
-        <p style="color:#94a3b8;">
-        The system combines word-level TF-IDF,
-        character-level TF-IDF and stylometric features
-        before passing them to the selected classifier.
-        </p>
+            <p style="
+                color:#94a3b8;
+                line-height:1.7;
+            ">
+                The system combines word-level TF-IDF,
+                character-level TF-IDF and stylometric
+                features before passing them to the selected
+                machine learning classifier.
+            </p>
 
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
 
 # =========================================================
-# ANALYZE
+# ANALYSIS
 # =========================================================
 
 if analyze:
@@ -1223,26 +1464,24 @@ if analyze:
 
             label, conf = predict(
                 review_text,
-                model
+                model,
             )
 
         conf = float(
             np.clip(
                 conf,
                 0.0,
-                1.0
+                1.0,
             )
         )
 
         is_ai = "CG" in label
 
-        st.session_state.analysis_done = True
-
         st.session_state.result = (
             label,
             conf,
             is_ai,
-            model_choice
+            model_choice,
         )
 
 
@@ -1252,9 +1491,12 @@ if analyze:
 
 if st.session_state.result is not None:
 
-    label, conf, is_ai, selected_model = (
-        st.session_state.result
-    )
+    (
+        label,
+        conf,
+        is_ai,
+        selected_model,
+    ) = st.session_state.result
 
     st.divider()
 
@@ -1265,17 +1507,22 @@ if st.session_state.result is not None:
         </div>
 
         <div class="section-subtitle">
-            Classification generated by the selected machine learning model.
+            Classification generated by your trained
+            machine learning model.
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
+
+    # =====================================================
+    # RESULT CARD
+    # =====================================================
 
     if is_ai:
 
         st.markdown(
-            f"""
+            """
             <div class="ai-result">
 
                 <div class="result-label">
@@ -1293,13 +1540,13 @@ if st.session_state.result is not None:
 
             </div>
             """,
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
 
     else:
 
         st.markdown(
-            f"""
+            """
             <div class="human-result">
 
                 <div class="result-label">
@@ -1317,7 +1564,7 @@ if st.session_state.result is not None:
 
             </div>
             """,
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
 
 
@@ -1345,17 +1592,17 @@ if st.session_state.result is not None:
 
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
 
     st.progress(
-        conf
+        conf,
     )
 
 
     # =====================================================
-    # RESULT DETAILS
+    # RESULT METRICS
     # =====================================================
 
     result_col1, result_col2, result_col3 = st.columns(3)
@@ -1368,7 +1615,7 @@ if st.session_state.result is not None:
             "AI Generated"
             if is_ai
             else
-            "Human Written"
+            "Human Written",
         )
 
 
@@ -1376,7 +1623,7 @@ if st.session_state.result is not None:
 
         st.metric(
             "Confidence",
-            f"{conf:.1%}"
+            f"{conf:.1%}",
         )
 
 
@@ -1384,7 +1631,7 @@ if st.session_state.result is not None:
 
         st.metric(
             "Model",
-            selected_model
+            selected_model,
         )
 
 
@@ -1394,25 +1641,37 @@ if st.session_state.result is not None:
 
     if conf >= 0.80:
 
-        interpretation = (
-            "🔴 High confidence — the model has a strong "
-            "indication that this review is AI-generated."
-            if is_ai
-            else
-            "🟢 High confidence — the model strongly "
-            "associates this review with human-written text."
-        )
+        if is_ai:
+
+            interpretation = (
+                "🔴 High confidence — the model has a strong "
+                "indication that this review is AI-generated."
+            )
+
+        else:
+
+            interpretation = (
+                "🟢 High confidence — the model strongly "
+                "associates this review with human-written text."
+            )
 
     elif conf >= 0.60:
 
-        interpretation = (
-            "🟠 Moderate confidence — the review shows "
-            "some characteristics associated with AI-generated text."
-            if is_ai
-            else
-            "🟡 Moderate confidence — the review shows "
-            "some characteristics associated with human writing."
-        )
+        if is_ai:
+
+            interpretation = (
+                "🟠 Moderate confidence — the review shows "
+                "some characteristics associated with "
+                "AI-generated text."
+            )
+
+        else:
+
+            interpretation = (
+                "🟡 Moderate confidence — the review shows "
+                "some characteristics associated with "
+                "human writing."
+            )
 
     else:
 
@@ -1428,7 +1687,7 @@ if st.session_state.result is not None:
             {interpretation}
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
 
@@ -1477,7 +1736,9 @@ if st.session_state.result is not None:
 
 st.markdown(
     """
-    <div class="card" style="margin-top:35px;">
+    <div class="card" style="
+        margin-top:35px;
+    ">
 
         <div style="
             font-size:16px;
@@ -1492,15 +1753,16 @@ st.markdown(
             font-size:13px;
             line-height:1.6;
         ">
-            This detector is an academic machine learning project.
-            Predictions are estimates rather than definitive proof
-            that a review was written by AI or a human.
-            Performance may vary on text outside the training domain.
+            This detector is an academic machine learning
+            project. Predictions are estimates rather than
+            definitive proof that a review was written by AI
+            or a human. Performance may vary on text outside
+            the training domain.
         </div>
 
     </div>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 
@@ -1513,13 +1775,16 @@ st.markdown(
     <div class="footer">
 
         🕵️ AI-Generated Review Detector
+
         <br>
+
         Machine Learning • NLP • TF-IDF • Stylometric Analysis
+
         <br><br>
+
         FYP / Academic Portfolio Project
 
     </div>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
-```
